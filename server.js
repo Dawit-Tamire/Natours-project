@@ -1,43 +1,45 @@
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+// Variable Environment
+const dotenv = require('dotenv')
+dotenv.config({ path: './config.env' })
 
+// Catch Error Code    
 process.on('uncaughtException', err => {
-  console.log('UNCAUGHT EXCEPTION! 💥 Shutting down...');
-  console.log(err.name, err.message);
-  process.exit(1);
-});
+    console.log('UNCAUGHT EXCEPTION!! Shutting down...')
+    console.log(err)
+    process.exit(1)
+})
 
-dotenv.config({ path: 'config.env' });
-const app = require('./app');
+const app = require('./app')
 
-const DB = process.env.DATABASE_LOCAL.replace(
-  '<PASSWORD>',
-  process.env.DATABASE_PASSWORD
-);
+// DATABASE
+const mongoose = require('mongoose')
+const DB = process.env.DATABASE_LOCAL
+mongoose.connect(DB, {}).then(con => {
+    console.log('DB connection successful!')
+})
 
-mongoose
-  .connect(DB, {
-    useNewUrlParser: true
-  })
-  .then(() => console.log('DB connection successful!'));
-
-
-const port = process.env.PORT || 3000;
+// Start Server
+const port = process.env.PORT || 8080
 const server = app.listen(port, () => {
-  console.log(`App running on port ${port}...`);
-});
+    console.log(`App listening on port ${port}...`)
+})
 
-process.on('unhandledRejection', err => {
-  console.log('UNHANDLED REJECTION! 💥 Shutting down...');
-  console.log(err.name, err.message);
-  server.close(() => {
-    process.exit(1);
-  });
-});
-
+// catch lỗi kết nối database
+// Error outside Express (ko phải lỗi server)
+process.on('unhandledRejection', (err) => {
+    // console.log(err)
+    console.log('UNHANDLER REJECTION!! Shutting down...')
+    server.close(() => {
+        process.exit(1)
+    })
+})
+// sigterm signal  => heroku sau 24h ...
 process.on('SIGTERM', () => {
-  console.log('👋 SIGTERM RECEIVED. Shutting down gracefully');
-  server.close(() => {
-    console.log('💥 Process terminated!');
-  });
-});
+    console.log('SIGTERM RECEIVED. Shutting down gracefully')
+    server.close(() => {
+        console.log('Process terminated')
+    })
+})
+
+
+
