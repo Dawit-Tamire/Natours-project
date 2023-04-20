@@ -1,8 +1,8 @@
-/* eslint-disable */
 import axios from 'axios';
 import { showAlert } from './alerts';
+import { loadStripe } from '@stripe/stripe-js';
 
-const stripe = Stripe(
+const stripe = await loadStripe(
   'pk_test_51Mx9ijLurg5wn2FXTzsIJsm0tXMPaBMsGKuZyGAxvrfb5CdkXIG5SWZY9iUV070tXOq8oGL7wlynCisKTdVGNFNU00jt8vUUfC'
 );
 

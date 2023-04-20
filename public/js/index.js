@@ -1,7 +1,9 @@
-import '@babel/polyfill';
+import 'core-js/stable';
+import 'regenerator-runtime/runtime.js';
 import { login, logout, signup, forgotPassword, resetPassword } from './auth';
 import { updateData, readImg } from './account';
 import { bookTour } from './stripe';
+const Tour = require('../../models/tourModel');
 
 // DOM ELEMENTS
 const loginForm = document.querySelector('.form--login');
@@ -13,6 +15,7 @@ const updatePasswordForm = document.querySelector('.form-user-password');
 const forgotPasswordForm = document.querySelector('.form-forgot-password');
 const resetPasswordForm = document.querySelector('.form-reset-password');
 const bookBtn = document.getElementById('book-tour');
+const searchTxt = document.getElementById('search');
 
 // DELEGATION
 if (loginForm) {
@@ -102,5 +105,20 @@ if (bookBtn) {
     e.target.textContent = 'Processing...';
     const { tourId } = e.target.dataset;
     bookTour(tourId);
+  });
+}
+
+if (searchTxt) {
+  searchTxt.addEventListener('input', (e) => {
+    // 1) Get tour data from collection
+    const tours = Tour.find({ name: searchTxt.value });
+    console.log;
+    const tour = Tour.find({ _id: { $in: tours } });
+
+    // 2) Render that template using tour data from 1)
+    res.status(200).render('overview', {
+      title: 'My tour',
+      tour,
+    });
   });
 }

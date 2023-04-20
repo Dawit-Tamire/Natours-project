@@ -274,7 +274,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   next();
 });
 
-// PHÂN QUYỀN
+// decentralization
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
     // roles ['admin','lead-guide']. role='user'

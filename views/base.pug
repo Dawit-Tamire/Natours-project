@@ -3,9 +3,9 @@ html(lang="en")
     head
         block head
             meta(charset="UTF-8")
-            meta(http-equiv="X-UA-Compatible", content="IE=chrome")
+            meta(http-equiv="X-UA-Compatible", content="IE=Edge")
             meta(name="viewport", content="width=device-width, initial-scale=1.0")
-            meta(http-equiv="Content-Security-Policy" content="script-src 'self' https://js.stripe.com/v3/")
+            //- meta(http-equiv="Content-Security-Policy" content="script-src 'self' https://js.stripe.com/v3/; script-src-elem 'self' https://js.stripe.com/v3/")
             link(rel="stylesheet", href="/css/style.css")
             link(rel="shortcut icon" type='image/png' href="/img/favicon.png")
             link(href="https://fonts.googleapis.com/css?family=Lato:300,300i,700" rel="stylesheet")
@@ -21,9 +21,6 @@ html(lang="en")
         // FOOTER
         include _footer
 
-        //- script(src='/js/axios.min.js')
-
-        //- script(src='https://js.stripe.com/v3/')
         script(src='/js/bundle.js')
 
 
