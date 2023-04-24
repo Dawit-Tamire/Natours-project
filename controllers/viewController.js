@@ -23,16 +23,26 @@ exports.getTour = catchAsync(async (req, res, next) => {
   // 1) get the data, for the requested tour (including reviews and guides)  -> relative data
   // const tour = await Tour.findOne({ slug: req.params.slug }).populate({
   //     path: 'reviews',
-  //     fields: 'review rating user'     // các field muốn lấy
+  //     fields: 'review rating user'
   // })
-  const tour = await Tour.findOne({ slug: req.params.slug });
+  const tour = await Tour.find(
+    { 
+      "$or":[
+        {
+          "slug": req.params.slug
+        }
+      ]
+
+    }
+    
+  );
   if (!tour) {
     return next(new AppError('There is no tour with that name.', 404));
   }
   // 2) Build template
 
   // Render template using data from 1)
-  res.status(200).render('tour', {
+  res.status(200).render('overview', {
     title: `${tour.name} Tour`,
     tour,
   });
