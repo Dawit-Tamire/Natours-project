@@ -5,12 +5,11 @@ const validator = require('validator')
 const tourSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: [true, 'A tour must have a name'],      //shorthand của values và message
+        required: [true, 'A tour must have a name'],      
         unique: true,
-        trim: true,  // loại bỏ các dấu cách thừa thãi ở đầu và cuối String
+        trim: true,  
         maxlength: [40, 'A tour name must have less or equal than 40 characters'],
-        minlength: [10, 'A tour name must have more or equal than 10 characters'],
-        // validate: [validator.isAlpha, 'Tour name must only contain characters']
+        minlength: [10, 'A tour name must have more or equal than 10 characters']
     },
     slug: String,
     duration: {
@@ -49,7 +48,6 @@ const tourSchema = new mongoose.Schema({
         validate: {
             validator: function (val) {
                 // custom validate: only points to current doc on NEW document creation
-                // chỉ đúng với khi tạo thêm DOC (Tour) mới
                 return val < this.price;
             },
             message: 'Discount price ({VALUE}) should be below regular price'
@@ -72,7 +70,7 @@ const tourSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now(),
-        select: false        // trường này mặc định ko gửi lên trên client khi Query
+        select: false        
     },
     startDates: [Date],
     secretTour: {
@@ -121,33 +119,25 @@ tourSchema.index({ price: 1, ratingsAverage: -1 })
 tourSchema.index({ slug: 1 })
 tourSchema.index({ startLocation: '2dsphere' })
 
-// VIRTUAL properties     => Ko lưu vào database
+// VIRTUAL properties
 tourSchema.virtual('durationWeeks').get(function () {
     return this.duration / 7;
 })
 //Virtual populate
 tourSchema.virtual('reviews', {
     ref: 'Review',
-    foreignField: 'tour',         // kết nối ngược lại field 'tour' ở bên reviewModel để lấy thông tin Reviews của mình
-    localField: '_id'      // lưu các review dưới dạng Id
+    foreignField: 'tour',         
+    localField: '_id'      
 })
 
 // DOCUMENT middleware: runs before .save() .create() .update() ...
 tourSchema.pre('save', function (next) {
-    this.slug = slugify(this.name, { lower: true })      // tự tạo slug khi thêm mới Tour (1 Tour là 1 document)
+    this.slug = slugify(this.name, { lower: true })      
     next()
 })
 
-// Embedding Guides into Tours   // Embedding  FEW:FEW  (Few Tours: Few Users (Guides))   => guides: Array
-// tourSchema.pre('save', async function (next) {
-//     const guidesPromises = this.guides.map(async (id) => await User.findById(id))        // thay thế userID bằng userData
-//     this.guides = await Promise.all(guidesPromises)
-//     next()
-// })
-
 // QUERY middleware
 tourSchema.pre(/^find/, function (next) {
-    // method bắt đầu với find (find(),findOne(),findById()...) sẽ ko tìm thấy những Tour có secretTour = true
     this.find({ secretTour: { $ne: true } })
     next()
 })
@@ -155,7 +145,7 @@ tourSchema.pre(/^find/, function (next) {
 tourSchema.pre(/^find/, function (next) {
     this.populate({
         path: 'guides',
-        select: '-__v -passwordChangedAt'    // vừa lấy data của các guides, vừa ẩn đi các field ko cần show trong data đó
+        select: '-__v -passwordChangedAt'
     }).populate({
         path: 'reviews',
         select: '-__v'
@@ -163,13 +153,6 @@ tourSchema.pre(/^find/, function (next) {
 
     next()
 })
-
-// ARRREGATION middleware
-// tourSchema.pre('aggregate', function (next) {
-//     this.pipeline().unshift({ $match: { secretTour: { $ne: true } } })   // ko lấy các secret Tour
-//     // console.log(this.pipeline())
-//     next()
-// })
 
 const Tour = mongoose.model('Tour', tourSchema)
 

@@ -8,11 +8,9 @@ router.post('/signup', authController.signUp)
 router.post('/login', authController.logIn)
 
 
-router.post('/forgotPassword', authController.forgotPassword)
 router.patch('/resetPassword/:token', authController.resetPassword)
 
 // Protect all routes after this middleware
-// Middleware xác thực người dùng đang đăng nhập
 router.use(authController.protect)
 
 router.get('/logout', authController.logOut)
@@ -21,7 +19,7 @@ router.get('/me', userController.getMe, userController.getUser)
 router.patch('/updateMe', userController.uploadUserPhoto, userController.resizeUserPhoto, userController.updateMe)
 router.patch('/deleteMe', userController.deleteMe)
 
-// Middleware phân quyền admin
+// Middleware DISTRIBUTION admin
 router.use(authController.restrictTo('admin', 'user'))
 
 router.route('/:id')

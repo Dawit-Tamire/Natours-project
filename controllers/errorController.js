@@ -72,7 +72,7 @@ const handleDuplicateFieldsDB = err => {
 }
 
 const handleValidationErrorDB = err => {
-    const errors = Object.values(err.errors).map(el => el.message)        // nhiều lỗi validate
+    const errors = Object.values(err.errors).map(el => el.message)       
     const message = `Invalid input data => ${errors.join('. ')}`;
     return new AppError(message, 400)
 }
@@ -91,13 +91,13 @@ module.exports = (err, req, res, next) => {
 
     if (process.env.NODE_ENV === 'development') {
         sendErrorDev(err, req, res)
-    } else if (process.env.NODE_ENV === 'production') {          // Setup Error chung chứ không phải đi catch Error cho từng API
+    } else if (process.env.NODE_ENV === 'production') {          // Setup Error, not to go Catch Error for each API
         // let error = { ...err }
-        if (err.name === 'CastError') err = handleCastErrorDB(err)        // Id ko tồn tại
-        if (err.code === 11000) err = handleDuplicateFieldsDB(err)        // Bị trùng tên (tính unique của Schema)
-        if (err.name === 'ValidationError') err = handleValidationErrorDB(err)   // Lỗi validate ở Schema của Model (DB)
-        if (err.name === 'JsonWebTokenError') err = handleJWTError()            // sai Token
-        if (err.name === 'TokenExpiredError') err = handleJWTExpiredError()     // Token hết hạn
-        sendErrorProd(err, req, res)       // đơn giản hóa Error khi gửi client 
+        if (err.name === 'CastError') err = handleCastErrorDB(err)        // ID does not exist
+        if (err.code === 11000) err = handleDuplicateFieldsDB(err)        // Schema's name (Unique)
+        if (err.name === 'ValidationError') err = handleValidationErrorDB(err)   // Validate error in the Schema of Model (DB)
+        if (err.name === 'JsonWebTokenError') err = handleJWTError()            // Saitoken
+        if (err.name === 'TokenExpiredError') err = handleJWTExpiredError()     // Expired token
+        sendErrorProd(err, req, res)       // Simplify Error when sending clients 
     }
 }

@@ -1,8 +1,5 @@
 extends base
 
-//- block append head   
-//-     script(src='https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js')
-
 block content
     main.main
         .login-form
@@ -18,8 +15,3 @@ block content
                     button.btn.btn--green.btn--login Login
             h3.forgot-mt You forgot the password?
                 a.forgot-password(href='/forgotPassword') Click here
-            .login-gg-fb
-                button.btn.btn--white.btn-login-gg
-                    a.login-with-gg(href= `${ggUrl}`) Login with Google
-                button.btn.btn--blue.btn-login-fb
-                    a.login-with-fb(href= `${fbUrl}`) Continue with Facebook

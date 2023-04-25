@@ -3,7 +3,6 @@ import 'regenerator-runtime/runtime.js';
 import { login, logout, signup, forgotPassword, resetPassword } from './auth';
 import { updateData, readImg } from './account';
 import { bookTour } from './stripe';
-import { search } from './search';
 
 // DOM ELEMENTS
 const loginForm = document.querySelector('.form--login');
@@ -112,11 +111,19 @@ if (bookBtn) {
 if (searchTxt) {
   searchTxt.addEventListener('change', (e) => {
     e.preventDefault();
-    
-    const searchName = e.target.value;
 
-    search(searchName)
-
+    location.assign(`/tour/${searchTxt.value}`)
 
   });
 }
+
+if (searchBtn) {
+  searchBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    location.assign(`/tour/${searchTxt.value}`)
+
+  }
+  )
+}
+

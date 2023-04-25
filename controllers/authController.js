@@ -1,12 +1,9 @@
 const User = require('./../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
-const Email = require('../utils/email');
 const jwt = require('jsonwebtoken');
-const { promisify } = require('util'); // Thư viện chức năng tích hợp sẵn trong node ( như 'fs' ) => promisify: function -> promise
-const crypto = require('crypto'); // có sẵn trong node
-const axios = require('axios');
-const singleImage = require('../utils/ImageFromUrl');
+const { promisify } = require('util');
+const crypto = require('crypto');
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -26,7 +23,7 @@ const createSendToken = (user, statusCode, req, res) => {
   }); // Send JWT via Cookie
 
   //remove the password from output
-  user.password = undefined; // ở đây ko .save() nên password trong database ko bị ảnh hưởng
+  user.password = undefined;
 
   res.status(statusCode).json({
     status: 'success',
@@ -37,16 +34,14 @@ const createSendToken = (user, statusCode, req, res) => {
   });
 };
 
-// ĐĂNG KÝ
+// REGISTER
 exports.signUp = catchAsync(async (req, res, next) => {
   const newUser = await User.create(req.body);
 
-  const url = `${req.protocol}://${req.get('host')}/me`;
-  await new Email(newUser, url).sendWelcome(); // gửi email chào mừng người dùng mới cùng link để chỉnh sửa avatar
   createSendToken(newUser, 201, req, res);
 });
 
-// ĐĂNG NHẬP
+// LOG IN
 exports.logIn = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
   // 1) Check if email and password exist
@@ -54,7 +49,7 @@ exports.logIn = catchAsync(async (req, res, next) => {
     return next(new AppError('Please provide email and password!', 400));
   }
   // 2) Check if user exists && password is correct
-  const user = await User.findOne({ email }).select('+password'); // thêm field password vào data user
+  const user = await User.findOne({ email }).select('+password'); 
   if (!user || !(await user.correctPassword(password, user.password))) {
     return next(new AppError('Incorrect email or password', 401));
   }
@@ -63,167 +58,7 @@ exports.logIn = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, req, res);
 });
 
-// ĐĂNH NHẬP VỚI GOOGLE
-exports.loginWithGoogle = catchAsync(async (req, res, next) => {
-  const { code } = req.query;
-  const redirect_uri = `${req.protocol}://${req.get(
-    'host'
-  )}/api/sessions/oauth/google`;
-  const client_id =
-    process.env.NODE_ENV === 'production'
-      ? process.env.GOOGLE_CLIENT_ID
-      : process.env.GOOGLE_CLIENT_ID_DEV;
-  const client_secret =
-    process.env.NODE_ENV === 'production'
-      ? process.env.GOOGLE_CLIENT_SECRET
-      : process.env.GOOGLE_CLIENT_SECRET_DEV;
-  const grant_type = 'authorization_code';
-  const url = 'https://oauth2.googleapis.com/token';
-  const data = await axios({
-    // id_token vs acess_token
-    method: 'POST',
-    url,
-    params: {
-      client_id,
-      client_secret,
-      redirect_uri,
-      code,
-      grant_type,
-    },
-  });
-  if (!data) {
-    return next(new AppError('Failed to get token from Google Api', 404));
-  }
-  const tokenFromGoogle = data.data.access_token;
-  const urlForGettingUserInfo = 'https://www.googleapis.com/oauth2/v2/userinfo';
-  const userData = await axios({
-    url: urlForGettingUserInfo,
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${tokenFromGoogle}`,
-    },
-  });
-  if (!userData) {
-    return next(new AppError('Failed to get User Info from Google Api', 404));
-  }
-  if (userData.data.verified_email === 'false') {
-    return next(new AppError('Google account is not verified ', 403));
-  }
-
-  const body = {
-    name: userData.data.name,
-    email: userData.data.email,
-    serviceProvider: 'google',
-    // photo: userData.data.pictrue,
-  };
-  //
-  const user = await User.findOne({ email: body.email });
-  if (!user) {
-    const imageFrofile = await singleImage(
-      userData.data.picture,
-      userData.data.email.split('@')[0],
-      'public/img/users'
-    );
-    // console.log(imageFrofile.path.split('.')[1])
-    body.photo = `${userData.data.email.split('@')[0]}.${
-      imageFrofile.path.split('.')[1]
-    }`;
-    body.password = '123456789';
-    body.passwordConfirm = '123456789';
-    const newUser = await User.create(body);
-    // await new Email(newUser, `${req.protocol}://${req.get('host')}/me`).sendWelcome()
-    const token = signToken(newUser._id);
-    res.cookie('jwt', token, {
-      expires: new Date(
-        Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-      ), // milliseconds
-      httpOnly: true,
-      secure: req.secure || req.header('x-forwarded-proto') === 'https',
-    }); // Send JWT via Cookie
-    res.status(201).redirect('/');
-  }
-  // if user has been in database
-  const token = signToken(user._id);
-  // await new Email(user, `${req.protocol}://${req.get('host')}/`).sendLoginWithGoogle()
-  res.cookie('jwt', token, {
-    expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-    ), // milliseconds
-    httpOnly: true,
-    secure: req.secure || req.header('x-forwarded-proto') === 'https',
-  }); // Send JWT via Cookie
-  res.status(200).redirect('/');
-});
-
-// ĐĂNG NHẬP VỚI FACEBOOK
-exports.loginWithFacebook = catchAsync(async (req, res, next) => {
-  const { code } = req.query;
-  // console.log(code)
-  const redirect_uri = `${req.protocol}://${req.get('host')}/oauth/facebook`;
-  const client_id = process.env.FACEBOOK_CLIENT_ID;
-  const client_secret = process.env.FACEBOOK_CLIENT_SECRET;
-  const data = await axios({
-    method: 'GET',
-    url: `https://graph.facebook.com/v14.0/oauth/access_token?client_id=${client_id}&redirect_uri=${redirect_uri}&client_secret=${client_secret}&code=${code}`,
-  });
-  // console.log(data.data)
-  if (!data) {
-    return next(new AppError('Failed to get token from Facebook Api', 404));
-  }
-  const tokenFromFacebook = data.data.access_token;
-  // console.log('Hello', tokenFromFacebook)
-  const urlForGettingUserInfo =
-    'https://graph.facebook.com/v14.0/me?fields=name,email,picture';
-  const userData = await axios({
-    url: urlForGettingUserInfo,
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${tokenFromFacebook}`,
-    },
-  });
-
-  if (!userData) {
-    return next(new AppError('Failed to get User Info from Facebook Api', 404));
-  }
-  const body = {
-    facebookId: userData.data.id,
-    name: userData.data.name,
-  };
-  const user = await User.findOne({ facebookId: body.facebookId });
-  if (!user) {
-    const imageFrofile = await singleImage(
-      userData.data.picture.data.url,
-      userData.data.id,
-      'public/img/users'
-    );
-    // console.log(imageFrofile.path.split('.')[1])
-    body.photo = `${userData.data.id}.${imageFrofile.path.split('.')[1]}`;
-    body.email = `${Date.now()}@example.com`;
-    body.password = '123456789';
-    body.passwordConfirm = '123456789';
-    const newUser = await User.create(body);
-    const token = signToken(newUser._id);
-    res.cookie('jwt', token, {
-      expires: new Date(
-        Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-      ), // milliseconds
-      httpOnly: true,
-      secure: req.secure || req.header('x-forwarded-proto') === 'https',
-    }); // Send JWT via Cookie
-    res.status(201).redirect('/');
-  }
-  // if user has been in database
-  const token = signToken(user._id);
-  res.cookie('jwt', token, {
-    expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-    ), // milliseconds
-    httpOnly: true,
-    secure: req.secure || req.header('x-forwarded-proto') === 'https',
-  }); // Send JWT via Cookie
-  res.status(200).redirect('/');
-});
-// ĐĂNG XUẤT
+// LOG OUT
 exports.logOut = (req, res) => {
   res.cookie('jwt', 'loggedout', {
     expires: new Date(Date.now() + 10 * 1000), // + 10s
@@ -232,7 +67,7 @@ exports.logOut = (req, res) => {
   res.status(200).json({ status: 'success' });
 };
 
-// XÁC THỰC, BẢO VỆ ROUTER
+// Authenticity, router protection
 exports.protect = catchAsync(async (req, res, next) => {
   // 1) Getting token and check of it's there
   let token;
@@ -240,7 +75,7 @@ exports.protect = catchAsync(async (req, res, next) => {
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
   ) {
-    token = req.headers.authorization.split(' ')[1]; // lấy token phía sau Bearer
+    token = req.headers.authorization.split(' ')[1]; // Get the token behind Bearer
   } else if (req.cookies.jwt) {
     token = req.cookies.jwt;
   }
@@ -287,14 +122,14 @@ exports.restrictTo = (...roles) => {
   };
 };
 
-// ĐỔI MẬT KHẨU
+// CHANGE PASSWORD
 exports.updatePassword = catchAsync(async (req, res, next) => {
   // 1) Get user from collection
   const user = await User.findById(req.user._id).select('+password'); // lấy thông tin người dùng (bao gồm mật khẩu) đang đăng nhập req.user
 
   // 2) Check if POSTed current password is correct
   if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
-    // Xác nhận đúng mật khẩu hiện tại
+    // Confirm the current password
     return next(new AppError('Your current password is wrong.', 401));
   }
   // 3) If so, update password
@@ -306,50 +141,16 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, req, res);
 });
 
-// QUÊN MẬT KHẨU
-exports.forgotPassword = catchAsync(async (req, res, next) => {
-  // 1) Get user based on POSTed email
-  const user = await User.findOne({ email: req.body.email });
-  if (!user) {
-    return next(new AppError('There is no user with email address.', 404));
-  }
-  // 2) Generate the random reset token
-  const resetToken = user.createPasswordResetToken();
-  await user.save({ validateBeforeSave: false }); // bỏ qua validate với SAVE, lưu thời gian gửi token
-  // 3) Send it to user's email
-  try {
-    // const url = `${req.protocol}://${req.get('host')}/me`;
-    const resetURL = `${req.protocol}://${req.get(
-      'host'
-    )}/resetPassword/${resetToken}`;
-    await new Email(user, resetURL).sendPasswordReset();
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Token sent to email!',
-    });
-  } catch (err) {
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-    await user.save({ validateBeforeSave: false });
-    return next(
-      new AppError(
-        'There was an error sending the email. Try again later!',
-        500
-      )
-    );
-  }
-});
-
 exports.resetPassword = catchAsync(async (req, res, next) => {
   // 1) Get user based on the token
   const hashedToken = crypto
     .createHash('sha256')
     .update(req.params.token)
-    .digest('hex'); // Hash cái token trên URL(cái đc gửi đến email user)
+    .digest('hex'); // Hash the token on the URL
+    
   const user = await User.findOne({
-    passwordResetToken: hashedToken, // trùng hashToken ở database
-    passwordResetExpires: { $gt: Date.now() }, // token reset password vẫn còn thời gian hiệu lực
+    passwordResetToken: hashedToken, // Hashtoken overlapping in database
+    passwordResetExpires: { $gt: Date.now() }, // token reset password still has valid time
   });
 
   // 2) If token has not expired, and there is user, set the new password
@@ -362,14 +163,12 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   user.passwordResetExpires = undefined;
   await user.save();
 
-  // 3) Update changedPasswordAt property for the user
-
-  // 4) Log the user in, send JWT
+  // 3) Log the user in, send JWT
   createSendToken(user, 200, req, res);
 });
 
-// ĐÃ ĐĂNG NHẬP? (chỉ dùng cho RENDER Pages) => Ko phải protect Routes => no errors! => no error page!!
-// Nếu đăng nhập thành công thì lưu biến res.locals.user để render thành phần pages theo điều kiện
+// LOGGED?(Only for render pages) => not Protect Routes => No Errors!=> No Error Page !!
+// If you successfully log in, save res.locals.user to render Pages ingredients as conditions
 exports.isLoggedIn = async (req, res, next) => {
   try {
     if (req.cookies.jwt) {

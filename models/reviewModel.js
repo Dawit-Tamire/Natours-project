@@ -32,47 +32,16 @@ const reviewSchema = new mongoose.Schema({
     }
 )
 
-reviewSchema.index({ tour: 1, user: 1 });    // Mỗi người chỉ được review 1 Tour 1 lần
+reviewSchema.index({ tour: 1, user: 1 });    // Each person can only review 1 tour 1 time
 
 
 // Query middleware
 reviewSchema.pre(/^find/, function (next) {
     this.populate({
         path: 'user',
-        select: 'name photo'  // chỉ lấy tên và ảnh của người review
+        select: 'name photo'  // Just take the name and photo of the reviewer
     })
     next()
-})
-
-reviewSchema.statics.calcAverageRatings = async function (tourId) {
-    const stats = await this.aggregate([
-        {
-            $match: { tour: tourId }      // trỏ vào tất cả review có Tour là tourId 
-        },
-        {
-            $group: {
-                _id: '$tour',
-                nRating: { $sum: 1 },
-                avgRating: { $avg: '$rating' }
-            }
-        }
-    ])
-    if (stats.length > 0) {
-        await Tour.findByIdAndUpdate(tourId, {         // tính toán lại Rating trong Tour đó
-            ratingsQuantity: stats[0].nRating,
-            ratingsAverage: stats[0].avgRating
-        })
-    } else {
-        await Tour.findByIdAndUpdate(tourId, {
-            ratingsQuantity: 0,             // khi ko có review nào thì tour sẽ trả lại giá trị Rating mặc định
-            ratingsAverage: 4.5
-        })
-    }
-}
-
-
-reviewSchema.post('save', function () {  // mỗi khi POST một review mới
-    this.constructor.calcAverageRatings(this.tour)
 })
 
 // findByIdAndUpdate
@@ -80,10 +49,6 @@ reviewSchema.post('save', function () {  // mỗi khi POST một review mới
 reviewSchema.pre(/^findOneAnd/, async function (next) {
     this.r = await this.findOne()
     next()
-})
-reviewSchema.post(/^findOneAnd/, async function () {       // mỗi khi sửa hoặc xóa một Review
-    //await this.findOne() does NOT work here, query has already executed
-    await this.r.constructor.calcAverageRatings(this.r.tour)
 })
 
 

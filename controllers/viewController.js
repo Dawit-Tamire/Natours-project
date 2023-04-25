@@ -3,8 +3,6 @@ const Booking = require('../models/bookingModel');
 const Review = require('../models/reviewModel');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
-const getGoogleURL = require('../utils/getGoogleURL');
-const getFacebookURL = require('../utils/getFacebookURL');
 
 exports.getOverview = catchAsync(async (req, res) => {
   // 1) Get tour data from collection
@@ -25,49 +23,51 @@ exports.getTour = catchAsync(async (req, res, next) => {
   //     path: 'reviews',
   //     fields: 'review rating user'
   // })
-  const tour = await Tour.find(
-    { 
-      "$or":[
-        {
-          "slug": req.params.slug
-        }
-      ]
-
-    }
-    
-  );
+  const tour = await Tour.findOne({slug: req.params.slug});
   if (!tour) {
     return next(new AppError('There is no tour with that name.', 404));
   }
   // 2) Build template
 
   // Render template using data from 1)
-  res.status(200).render('overview', {
+  res.status(200).render('tour', {
     title: `${tour.name} Tour`,
     tour,
   });
 });
 
+exports.searchTour = catchAsync(async (req, res, next) => {
+  // 1) get the data, for the requested tour (including reviews and guides)  -> relative data
+  const tours = await Tour.find(
+    { 
+      "$or":
+        [{slug: {$regex: req.params.slug} }]
+    }
+  );
+  if (!tours) {
+    return next(new AppError('There is no tour with that name.', 404));
+  }
+
+  // 2) Build template
+
+  // Render template using data from 1)
+  res.status(200).render('overview', {
+    title: `${tours.name} Tour`,
+    tours,
+  });
+});
+
 exports.getLoginForm = (req, res) => {
   if (res.locals.user) res.redirect('/'); // nếu đang đăng nhập rồi thì ko thể truy cập /login
-  const ggUrl = getGoogleURL();
-  const fbUrl = getFacebookURL();
+
   res.status(200).render('login', {
-    title: 'Log into your account',
-    ggUrl,
-    fbUrl,
+    title: 'Log into your account'
   });
 };
 exports.getSignupForm = (req, res) => {
   if (res.locals.user) res.redirect('/'); // nếu đang đăng nhập rồi thì ko thể truy cập /signup
   res.status(200).render('signup', {
     title: 'Sign up new account',
-  });
-};
-exports.getForgotPasswordForm = (req, res) => {
-  if (res.locals.user) res.redirect('/');
-  res.status(200).render('forgotPassword', {
-    title: 'Forgot your password',
   });
 };
 exports.getResetPasswordForm = (req, res) => {
@@ -98,18 +98,16 @@ exports.getMyTour = catchAsync(async (req, res, next) => {
   });
 });
 
-// exports.getMyReview = catchAsync(async (req, res, next) => {
-//   // 1) Get tour data from collection
-//   const reviews = await Review.find({ user: req.user.id });
+exports.getMyBilling = catchAsync(async (req, res, next) => {
+  // 1) Get tour data from collection
+  const bookings = await Booking.find({ user: req.user.id });
 
-//   var review;
+  // 2) Render that template using tour data from 1)
+  res.status(200).render('billing', {
+    title: 'My bills',
+    bookings,
+  });
+  
+});
 
-//   forEach(review in reviews);
-//   const viewReview =+ reviewCard(review);
 
-//   // 2) Render that template using review data from 1)
-//   res.status(200).render(`${viewReview}`, {
-//     title: 'My review',
-//     reviews,
-//   });
-// });

@@ -8,7 +8,6 @@ const userSchema = new moongose.Schema({
         type: String,
         required: [true, 'Please tell us your name!'],
     },
-    facebookId: String,
     email: {
         type: String,
         required: [true, 'Please provide your email'],
@@ -29,7 +28,7 @@ const userSchema = new moongose.Schema({
         type: String,
         required: [true, 'Please provide a password'],
         minlength: 6,
-        select: false        // mặc định ko gửi lên client bằng phương thức Find..(query)
+        select: false        // default not send to client by find .. (query)
     },
     passwordConfirm: {
         type: String,
@@ -45,7 +44,7 @@ const userSchema = new moongose.Schema({
     createdAt: {
         type: Date,
         default: Date.now(),
-        select: false      // mặc định ko gửi lên client bằng phương thức Find..(query)
+        select: false      // default not send to client by find .. (query)
     },
     passwordChangedAt: Date,
     passwordResetToken: String,
@@ -53,7 +52,7 @@ const userSchema = new moongose.Schema({
     active: {
         type: Boolean,
         default: true,
-        select: false     // mặc định ko gửi lên client bằng phương thức Find..(query)
+        select: false     // default not send to client by find .. (query)
     },
     deletedAt: Date,
 })
@@ -70,9 +69,7 @@ userSchema.pre('save', async function (next) {
 })
 
 userSchema.pre('save', function (next) {
-    // nếu ko có password hoặc User được tạo mới thì thoát ra
     if (!this.isModified('password') || this.isNew) return next()
-    // nếu ko phải là User tạo mới 
     this.passwordChangedAt = Date.now() - 1000
     next()
 })
@@ -98,7 +95,7 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
     return false
 }
 
-userSchema.methods.createPasswordResetToken = function () {  // Gửi token đến email người dùng xác nhận đổi password, với hạn là 10phut
+userSchema.methods.createPasswordResetToken = function () {
     const resetToken = crypto.randomBytes(32).toString('hex')
     this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex')
     this.passwordResetExpires = Date.now() + 10 * 60 * 1000;

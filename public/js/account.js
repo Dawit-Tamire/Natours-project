@@ -12,7 +12,7 @@ export const updateData = async (data, type) => {
         })
         if (res.data.status === 'success') {
             showAlert('success', `${type.toUpperCase()} update successfully`)
-            // location.reload(true)                   // reload lại trang
+            // location.reload(true)                   
         }
     } catch (err) {
         showAlert('error', err.response.data.message)

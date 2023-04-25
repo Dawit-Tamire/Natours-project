@@ -1,21 +1,10 @@
 const User = require('../models/userModel')
-const APIFeatures = require('../utils/apiFeatures')
 const catchAsync = require('../utils/catchAsync')
 const AppError = require('../utils/appError')
 const factory = require('./handlerFactory')
 const multer = require('multer')   // upload file
 const sharp = require('sharp')   // resize photo
 
-// const multerStorage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         cb(null, 'public/img/users')
-//     },
-//     filename: (req, file, cb) => {
-//         //user-321321321321b-32121321231.jpeg
-//         const ext = file.mimetype.split('/')[1]      // .jpeg    .jpg   .png
-//         cb(null, `user-${req.user.id}-${Date.now()}.${ext}`)
-//     }
-// })
 const multerStorage = multer.memoryStorage()
 const multerFilter = (req, file, cb) => {
     if (file.mimetype.startsWith('image')) {         // if file is a image

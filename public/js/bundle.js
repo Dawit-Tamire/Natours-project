@@ -20935,7 +20935,7 @@ const updateData = async (data, type) => {
         })
         if (res.data.status === 'success') {
             (0,_alerts__WEBPACK_IMPORTED_MODULE_0__.showAlert)('success', `${type.toUpperCase()} update successfully`)
-            // location.reload(true)                   // reload lại trang
+            // location.reload(true)                   
         }
     } catch (err) {
         (0,_alerts__WEBPACK_IMPORTED_MODULE_0__.showAlert)('error', err.response.data.message)
@@ -20974,10 +20974,10 @@ const hideAlert = () => {
 }
 
 // type is success or error 
-const showAlert = (type, msg, time = 5) => {       // mặc định tắt sau 5s
+const showAlert = (type, msg, time = 5) => {       
     hideAlert()
     const markup = `<div class="alert alert--${type}">${msg}</div>`
-    document.querySelector('body').insertAdjacentHTML('afterbegin', markup)       // thêm HTML
+    document.querySelector('body').insertAdjacentHTML('afterbegin', markup)       
     window.setTimeout(hideAlert, time * 1000)
 }
 
@@ -21103,15 +21103,14 @@ const resetPassword = async (data, resetToken) => {
 __webpack_require__.a(module, async (__webpack_handle_async_dependencies__, __webpack_async_result__) => { try {
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var core_js_stable__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/stable */ "./node_modules/core-js/stable/index.js");
+/* harmony import */ var core_js_stable__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_stable__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var regenerator_runtime_runtime_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! regenerator-runtime/runtime.js */ "./node_modules/regenerator-runtime/runtime.js");
 /* harmony import */ var regenerator_runtime_runtime_js__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime_js__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var _auth__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./auth */ "./public/js/auth.js");
 /* harmony import */ var _account__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./account */ "./public/js/account.js");
 /* harmony import */ var _stripe__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./stripe */ "./public/js/stripe.js");
-/* harmony import */ var _search__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./search */ "./public/js/search.js");
 var __webpack_async_dependencies__ = __webpack_handle_async_dependencies__([_stripe__WEBPACK_IMPORTED_MODULE_4__]);
 _stripe__WEBPACK_IMPORTED_MODULE_4__ = (__webpack_async_dependencies__.then ? (await __webpack_async_dependencies__)() : __webpack_async_dependencies__)[0];
-
 
 
 
@@ -21225,48 +21224,25 @@ if (bookBtn) {
 if (searchTxt) {
   searchTxt.addEventListener('change', (e) => {
     e.preventDefault();
-    
-    const searchName = e.target.value;
 
-    (0,_search__WEBPACK_IMPORTED_MODULE_5__.search)(searchName)
-
+    location.assign(`/tour/${searchTxt.value}`)
 
   });
 }
 
-__webpack_async_result__();
-} catch(e) { __webpack_async_result__(e); } });
+if (searchBtn) {
+  searchBtn.addEventListener('click', (e) => {
+    e.preventDefault();
 
-/***/ }),
+    location.assign(`/tour/${searchTxt.value}`)
 
-/***/ "./public/js/search.js":
-/*!*****************************!*\
-  !*** ./public/js/search.js ***!
-  \*****************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "search": () => (/* binding */ search)
-/* harmony export */ });
-/* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! axios */ "./node_modules/axios/lib/axios.js");
-/* harmony import */ var _alerts__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./alerts */ "./public/js/alerts.js");
-
-
-
-const search = async (data) => {
-    try {
-        const res = await (0,axios__WEBPACK_IMPORTED_MODULE_1__["default"])({
-            method: 'POST',
-            url: '/api/v1/tour/:slug',
-            data
-        })
-    } catch (err) {
-        (0,_alerts__WEBPACK_IMPORTED_MODULE_0__.showAlert)('error', err.response.data.message)
-    }
+  }
+  )
 }
 
+
+__webpack_async_result__();
+} catch(e) { __webpack_async_result__(e); } });
 
 /***/ }),
 
@@ -21295,11 +21271,8 @@ const stripe = await (0,_stripe_stripe_js__WEBPACK_IMPORTED_MODULE_1__.loadStrip
 
 const bookTour = async (tourId) => {
   try {
-    console.log('session will be received');
-
     // 1) Get checkout session from API
     const session = await (0,axios__WEBPACK_IMPORTED_MODULE_2__["default"])(`/api/v1/bookings/checkout-session/${tourId}`);
-    console.log('session received');
 
     // 2) Create checkout form + chanre credit card
     await stripe.redirectToCheckout({
